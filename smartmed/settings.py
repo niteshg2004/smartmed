@@ -4,8 +4,12 @@ Django settings for the SmartMed project.
 Phase 1 scope: project skeleton, all core models, authentication (custom User
 model + DRF token auth), RBAC groundwork. Later phases add ML, OCR, maps.
 """
+import os
+import secrets
 from pathlib import Path
-from datetime import timedelta
+from urllib.parse import parse_qs, unquote, urlparse
+
+from django.core.exceptions import ImproperlyConfigured
 
 from .env import load_env, env_bool, env_list
 
@@ -13,17 +17,24 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_env(BASE_DIR / ".env")
 
-import os  # noqa: E402  (after load_env on purpose)
-
 # ---------------------------------------------------------------------------
 # Core / security
 # ---------------------------------------------------------------------------
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY",
-    "django-insecure-dev-only-change-me-before-any-real-deployment",
-)
-DEBUG = env_bool("DEBUG", default=True)
+IS_VERCEL = bool(os.environ.get("VERCEL"))
+DEBUG = env_bool("DEBUG", default=not IS_VERCEL)
+SECRET_KEY = os.environ.get("SECRET_KEY", "").strip()
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = secrets.token_urlsafe(50)
+    else:
+        raise ImproperlyConfigured("SECRET_KEY must be set when DEBUG=False.")
+
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+for vercel_host in (os.environ.get("VERCEL_URL"), os.environ.get("VERCEL_BRANCH_URL")):
+    if vercel_host and vercel_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(vercel_host)
+if IS_VERCEL and ".vercel.app" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".vercel.app")
 
 # ---------------------------------------------------------------------------
 # Applications
@@ -97,31 +108,28 @@ ASGI_APPLICATION = "smartmed.asgi.application"
 # ---------------------------------------------------------------------------
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-if DATABASE_URL.startswith("postgres"):
-    import re
-
-    m = re.match(
-        r"postgres(?:ql)?://(?P<user>[^:]+):(?P<password>[^@]*)@"
-        r"(?P<host>[^:/]+):?(?P<port>\d*)/(?P<name>.+)",
-        DATABASE_URL,
-    )
-    if not m:
+if DATABASE_URL:
+    parsed_database_url = urlparse(DATABASE_URL)
+    if parsed_database_url.scheme not in {"postgres", "postgresql"}:
         raise ValueError(
             "DATABASE_URL is set but could not be parsed. Expected format: "
             "postgres://user:password@host:port/dbname"
         )
-    gd = m.groupdict()
+    database_options = parse_qs(parsed_database_url.query)
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": gd["name"],
-            "USER": gd["user"],
-            "PASSWORD": gd["password"],
-            "HOST": gd["host"],
-            "PORT": gd["port"] or "5432",
+            "NAME": unquote(parsed_database_url.path.lstrip("/")),
+            "USER": unquote(parsed_database_url.username or ""),
+            "PASSWORD": unquote(parsed_database_url.password or ""),
+            "HOST": parsed_database_url.hostname or "",
+            "PORT": str(parsed_database_url.port or 5432),
+            "OPTIONS": {key: values[-1] for key, values in database_options.items()},
         }
     }
 else:
+    if not DEBUG:
+        raise ImproperlyConfigured("DATABASE_URL must be set when DEBUG=False.")
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -229,6 +237,7 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 # ---------------------------------------------------------------------------
 # Logging (never log raw prescription text / PII — see prescriptions app)
