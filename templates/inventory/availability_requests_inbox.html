@@ -1,0 +1,62 @@
+{% extends "base/base.html" %}
+{% block title %}Availability Inbox — SmartMed{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">Availability requests inbox</h2>
+        <p class="text-muted mb-0">Respond to patient requests for your pharmacy.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        {% if requests %}
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Patient</th>
+                        <th>Medicine</th>
+                        <th>Requested</th>
+                        <th style="min-width: 260px;">Response</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in requests %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ r.user.name }}</div>
+                            <div class="small text-muted">{{ r.user.email }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ r.medicine.brand_name }} {{ r.medicine.strength }}</div>
+                            <div class="small text-muted">{{ r.pharmacy.name }}</div>
+                        </td>
+                        <td class="text-muted small">{{ r.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <form method="post" action="{% url 'inventory:request-respond' pk=r.pk %}" class="vstack gap-2">
+                                {% csrf_token %}
+                                <select name="status" class="form-select form-select-sm">
+                                    {% for value, label in status_choices %}
+                                        <option value="{{ value }}" {% if r.status == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="text" class="form-control form-control-sm" name="response" value="{{ r.response }}" placeholder="Optional note for the patient">
+                        </td>
+                        <td class="text-end">
+                                <button class="btn btn-sm btn-primary" type="submit">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">No availability requests.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

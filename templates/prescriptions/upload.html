@@ -1,0 +1,53 @@
+{% extends "base/base.html" %}
+{% block title %}Upload Prescription — SmartMed{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">Upload prescription</h2>
+        <p class="text-muted mb-0">Upload a prescription image, run OCR, and confirm detected medicines manually.</p>
+    </div>
+    <a class="btn btn-outline-primary" href="{% url 'prescriptions:list' %}">
+        <i class="bi bi-folder2-open me-1"></i> My prescriptions
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" class="vstack gap-3">
+                    {% csrf_token %}
+                    <div>
+                        {{ form.file.label_tag }}
+                        {{ form.file }}
+                        {% if form.file.help_text %}
+                        <div class="form-text">{{ form.file.help_text }}</div>
+                        {% endif %}
+                        {% if form.file.errors %}
+                        <div class="text-danger small mt-1">{{ form.file.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-upload me-1"></i> Upload & run OCR
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Privacy & safety</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item px-0">Prescription files are stored privately and are not publicly accessible.</li>
+                    <li class="list-group-item px-0">OCR output can be wrong. You must confirm medicines before use.</li>
+                    <li class="list-group-item px-0">SmartMed never recommends medicine substitution without pharmacist verification.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

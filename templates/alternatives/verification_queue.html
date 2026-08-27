@@ -1,0 +1,90 @@
+{% extends "base/base.html" %}
+{% block title %}Alternative Verification — SmartMed{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">Alternative verification queue</h2>
+        <p class="text-muted mb-0">Review structured medicine matches. Approved items may be shown to patients as pharmacist-verified alternatives.</p>
+    </div>
+    <form method="get" class="d-flex gap-2">
+        <select name="status" class="form-select">
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-outline-primary" type="submit">Filter</button>
+    </form>
+</div>
+
+<div class="alert alert-warning">
+    Potential alternative candidate detected based on structured medicine information. Consult a qualified doctor or pharmacist before substitution.
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        {% if alternatives %}
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Original medicine</th>
+                        <th>Candidate medicine</th>
+                        <th>Composition</th>
+                        <th>Strength</th>
+                        <th>Dosage form</th>
+                        <th>Similarity</th>
+                        <th>Matching basis</th>
+                        <th>Status</th>
+                        <th class="text-end">Review</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in alternatives %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ item.medicine.brand_name }}</div>
+                            <div class="small text-muted">{{ item.medicine.generic_name }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ item.candidate_medicine.brand_name }}</div>
+                            <div class="small text-muted">{{ item.candidate_medicine.generic_name }}</div>
+                            {% if item.verification_status == "approved" %}
+                            <div class="badge bg-success mt-1">Verified by pharmacist</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.candidate_medicine.composition }}</td>
+                        <td>{{ item.candidate_medicine.strength }}</td>
+                        <td>{{ item.candidate_medicine.get_dosage_form_display }}</td>
+                        <td>{{ item.confidence_score|floatformat:2|cut:"0." }}%</td>
+                        <td>{{ item.get_matching_basis_display }}</td>
+                        <td>
+                            {% if item.verification_status == "approved" %}
+                            <span class="badge bg-success">Approved</span>
+                            {% elif item.verification_status == "rejected" %}
+                            <span class="badge bg-danger">Rejected</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                            {% if item.verified_by %}
+                            <div class="small text-muted mt-1">{{ item.verified_by.name }} • {{ item.verified_at|date:"Y-m-d H:i" }}</div>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <form method="post" class="d-inline-flex gap-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="candidate_id" value="{{ item.id }}">
+                                <button class="btn btn-sm btn-success" type="submit" name="action" value="approve">Approve</button>
+                                <button class="btn btn-sm btn-outline-danger" type="submit" name="action" value="reject">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">No alternative candidates in this queue.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

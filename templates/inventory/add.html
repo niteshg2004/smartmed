@@ -1,0 +1,20 @@
+{% extends 'base/base.html' %}
+{% block title %}Add Medicine to Inventory{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Add Medicine</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="medicine_id" class="form-label">Select Medicine</label>
+            <select name="medicine_id" id="medicine_id" class="form-control" required>
+                <option value="">Choose...</option>
+                {% for medicine in medicines %}
+                <option value="{{ medicine.id }}">{{ medicine.name }} ({{ medicine.manufacturer }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Continue to Update Stock</button>
+    </form>
+</div>
+{% endblock %}

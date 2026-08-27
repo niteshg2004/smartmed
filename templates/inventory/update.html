@@ -1,0 +1,13 @@
+{% extends 'base/base.html' %}
+{% block title %}Update Inventory{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Update Stock for {{ medicine.name }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">Save</button>
+        <a href="{% url 'inventory:list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

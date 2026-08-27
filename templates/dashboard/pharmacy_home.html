@@ -1,0 +1,76 @@
+{% extends "base/base.html" %}
+{% block title %}Pharmacy Dashboard — SmartMed{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h3 class="mb-1">Welcome, {{ user.name }}</h3>
+        <p class="text-muted mb-0">Manage inventory, respond to availability requests, and view analytics.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <a href="{% url 'inventory:list' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Inventory</div>
+                <div class="small text-muted">{{ inventory_count }} item(s)</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'inventory:list' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Low stock</div>
+                <div class="small text-muted">{{ low_stock_count }} item(s)</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'inventory:requests-inbox' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Availability requests</div>
+                <div class="small text-muted">Respond to patient requests</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'predictions:analytics' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Stock analytics</div>
+                <div class="small text-muted">History + prediction charts</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'pharmacies:dashboard' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Pharmacy profile</div>
+                <div class="small text-muted">Update address & details</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Recent availability requests</h5>
+    </div>
+    <div class="card-body">
+        {% if recent_requests %}
+            <ul class="list-group list-group-flush">
+                {% for r in recent_requests %}
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <div class="small">
+                            {{ r.user.name }} • {{ r.medicine.brand_name }} {{ r.medicine.strength }}
+                            <span class="text-muted">({{ r.status }})</span>
+                        </div>
+                        <a class="btn btn-sm btn-outline-primary" href="{% url 'inventory:requests-inbox' %}">Open</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="text-muted">No incoming requests.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

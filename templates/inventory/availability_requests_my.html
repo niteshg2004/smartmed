@@ -1,0 +1,61 @@
+{% extends "base/base.html" %}
+{% block title %}My Availability Requests — SmartMed{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">My availability requests</h2>
+        <p class="text-muted mb-0">Requests you’ve sent to pharmacies and their responses.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'inventory:request-new' %}">
+        <i class="bi bi-plus-lg me-1"></i> New request
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        {% if requests %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Medicine</th>
+                        <th>Pharmacy</th>
+                        <th>Status</th>
+                        <th>Response</th>
+                        <th>Updated</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in requests %}
+                    <tr>
+                        <td class="fw-semibold">{{ r.medicine.brand_name }} {{ r.medicine.strength }}</td>
+                        <td>{{ r.pharmacy.name }}</td>
+                        <td>
+                            {% if r.status == "pending" %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% elif r.status == "available" or r.status == "confirmed" %}
+                                <span class="badge bg-success">Available</span>
+                            {% elif r.status == "low_stock" %}
+                                <span class="badge bg-warning text-dark">Low Stock</span>
+                            {% elif r.status == "out_of_stock" or r.status == "denied" %}
+                                <span class="badge bg-danger">Out of Stock</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ r.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">{{ r.response|default:"—" }}</td>
+                        <td class="text-muted small">{{ r.updated_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+            No availability requests yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,83 @@
+{% extends "base/base.html" %}
+{% block title %}{{ medicine.brand_name }} — SmartMed{% endblock %}
+{% block content %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h2 class="card-title fw-bold text-primary mb-0">{{ medicine.brand_name }} {{ medicine.strength }}</h2>
+                    {% if medicine.prescription_required %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger-subtle px-3 py-2"><i class="bi bi-file-medical me-1"></i> Prescription Required</span>
+                    {% endif %}
+                </div>
+                
+                <h5 class="text-dark mb-4"><i class="bi bi-capsule text-muted me-2"></i> {{ medicine.get_dosage_form_display }}</h5>
+                
+                <div class="row mb-4">
+                    <div class="col-sm-6 mb-3 mb-sm-0">
+                        <div class="p-3 bg-light rounded h-100">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-2">Generic Name</h6>
+                            <p class="mb-0">{{ medicine.generic_name }}</p>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded h-100">
+                            <h6 class="text-muted text-uppercase small fw-bold mb-2">Composition</h6>
+                            <p class="mb-0">{{ medicine.composition }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Manufacturer</h6>
+                    <p class="mb-0"><i class="bi bi-building text-muted me-2"></i> {{ medicine.manufacturer|default:"Unknown Manufacturer" }}</p>
+                </div>
+                
+                {% if medicine.therapeutic_category %}
+                <div class="mb-4">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Therapeutic Category</h6>
+                    <span class="badge bg-secondary"><i class="bi bi-tag-fill me-1"></i> {{ medicine.therapeutic_category }}</span>
+                </div>
+                {% endif %}
+                
+                {% if medicine.description %}
+                <div class="mb-0">
+                    <h6 class="text-muted text-uppercase small fw-bold mb-2">Description</h6>
+                    <p class="mb-0">{{ medicine.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Availability Section (Placeholder) -->
+        <div class="card shadow-sm border-0 mb-4 bg-primary bg-opacity-10">
+            <div class="card-body p-4 text-center">
+                <i class="bi bi-geo-alt-fill text-primary" style="font-size: 2.5rem;"></i>
+                <h4 class="mt-3 text-primary fw-bold">Find Availability</h4>
+                <p class="text-muted small mb-4">Check which nearby pharmacies have this medicine in stock.</p>
+                <a class="btn btn-primary w-100" href="{% url 'pharmacies:nearby-medicine' medicine.id %}">
+                  Check Nearby Pharmacies
+                </a>
+            </div>
+        </div>
+        
+        <!-- Alternative Candidates Section (Placeholder) -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom pt-3 pb-2">
+                <h5 class="card-title fw-bold text-dark mb-0"><i class="bi bi-arrow-left-right text-muted me-2"></i> Alternatives</h5>
+            </div>
+            <div class="card-body text-center p-4">
+                <p class="text-muted small mb-0">
+                  Potential alternative candidates will appear here after pharmacist verification.
+                  <span class="d-block mt-2">Always consult a qualified doctor or pharmacist before any substitution.</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

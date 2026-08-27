@@ -1,0 +1,132 @@
+{% extends "base/base.html" %}
+{% block title %}Dashboard — SmartMed{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h3 class="mb-1">Welcome, {{ user.name }}</h3>
+        <p class="text-muted mb-0">Search medicines, check nearby pharmacies, and upload prescriptions for OCR and confirmation.</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <a href="{% url 'medicines:search' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Search Medicine</div>
+                <div class="small text-muted">Fuzzy search with confidence scores.</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'prescriptions:upload' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Upload Prescription</div>
+                <div class="small text-muted">OCR → confirm medicines → view candidates.</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'inventory:requests-my' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Availability Requests</div>
+                <div class="small text-muted">Ask a pharmacy to confirm stock.</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'prescriptions:list' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Prescription Results</div>
+                <div class="small text-muted">View OCR text, matches, and confirmation status.</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'pharmacies:list' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Nearby Pharmacies</div>
+                <div class="small text-muted">Pick a medicine and find nearby options.</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'predictions:analytics' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Stock Analytics</div>
+                <div class="small text-muted">Demand history + prediction charts.</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Recent searches</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_searches %}
+                    <ul class="list-group list-group-flush">
+                        {% for s in recent_searches %}
+                            <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <div class="fw-semibold">{{ s.query_text }}</div>
+                                    {% if s.medicine %}
+                                        <div class="small text-muted">{{ s.medicine.brand_name }} {{ s.medicine.strength }}</div>
+                                    {% endif %}
+                                </div>
+                                <a class="btn btn-sm btn-outline-primary" href="{% url 'medicines:search' %}?q={{ s.query_text|urlencode }}">Search</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-muted">No searches yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Recent requests & uploads</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="fw-semibold mb-2">Availability requests</div>
+                    {% if recent_availability_requests %}
+                        <ul class="list-group list-group-flush">
+                            {% for r in recent_availability_requests %}
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                    <div class="small">
+                                        {{ r.medicine.brand_name }} {{ r.medicine.strength }} • {{ r.pharmacy.name }}
+                                        <span class="text-muted">({{ r.status }})</span>
+                                    </div>
+                                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'inventory:requests-my' %}">View</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-muted small">No requests yet.</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="fw-semibold mb-2">Prescriptions</div>
+                    {% if recent_prescriptions %}
+                        <ul class="list-group list-group-flush">
+                            {% for p in recent_prescriptions %}
+                                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                    <div class="small">Prescription #{{ p.id }} <span class="text-muted">({{ p.processing_status }})</span></div>
+                                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'prescriptions:detail' pk=p.pk %}">Open</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-muted small">No prescriptions uploaded yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

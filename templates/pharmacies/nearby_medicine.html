@@ -1,0 +1,255 @@
+{% extends "base/base.html" %}
+{% load static %}
+{% block title %}Nearby Pharmacies — {{ medicine.brand_name }}{% endblock %}
+
+{% block extra_head %}
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <style>
+    #map { height: 360px; border-radius: 12px; }
+    .pharmacy-row { transition: background-color .15s ease-in-out; }
+    .pharmacy-row:hover { background-color: rgba(13,110,253,.05); }
+    .badge-soft { background: rgba(13,110,253,.08); color: #0d6efd; border: 1px solid rgba(13,110,253,.18); }
+    .demo-pill { background: rgba(255,193,7,.15); color: #8a6d00; border: 1px solid rgba(255,193,7,.25); }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+    <div>
+      <h2 class="mb-1">Nearby Pharmacies</h2>
+      <div class="text-muted">
+        Medicine: <span class="fw-semibold">{{ medicine.brand_name }} {{ medicine.strength }}</span>
+        {% if medicine.is_demo_data %}
+          <span class="badge demo-pill ms-2">DEMO / SIMULATED DATA</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <label class="form-label small text-muted mb-0" for="radius">Radius</label>
+      <select id="radius" class="form-select form-select-sm" style="width: 120px;">
+        <option value="2">2 km</option>
+        <option value="5" selected>5 km</option>
+        <option value="10">10 km</option>
+        <option value="20">20 km</option>
+      </select>
+      <button id="btnRefresh" class="btn btn-sm btn-primary">Refresh</button>
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    <div class="fw-semibold">Safety note</div>
+    Availability and confidence shown here are based on inventory updates and recent patterns.
+    Always confirm with the pharmacy before visiting.
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div id="map"></div>
+          <div class="small text-muted mt-2">
+            Map uses OpenStreetMap via Leaflet (no paid map API).
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 pb-0">
+          <div class="d-flex align-items-center justify-content-between">
+            <h5 class="mb-0">Results</h5>
+            <span id="statusText" class="small text-muted">Waiting for location…</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="emptyState" class="text-center text-muted py-4 d-none">
+            No nearby pharmacies found in the selected radius.
+          </div>
+          <div id="errorState" class="alert alert-warning d-none"></div>
+          <div class="table-responsive">
+            <table class="table align-middle mb-0">
+              <thead>
+                <tr class="text-muted small">
+                  <th>Pharmacy</th>
+                  <th class="text-end">Distance</th>
+                  <th class="text-end">Status</th>
+                  <th class="text-end">Stock</th>
+                  <th class="text-end">Confidence</th>
+                  <th class="text-end"></th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <template id="rowTpl">
+    <tr class="pharmacy-row">
+      <td>
+        <div class="fw-semibold name"></div>
+        <div class="small text-muted address"></div>
+        <div class="small">
+          <span class="badge demo-pill d-none demo">DEMO</span>
+        </div>
+      </td>
+      <td class="text-end distance"></td>
+      <td class="text-end"><span class="badge status"></span></td>
+      <td class="text-end stock"></td>
+      <td class="text-end conf"></td>
+      <td class="text-end">
+        <a class="btn btn-sm btn-outline-primary view" href="#">View</a>
+      </td>
+    </tr>
+  </template>
+{% endblock %}
+
+{% block extra_scripts %}
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script>
+    const medicineId = {{ medicine.id }};
+    const defaultCenter = {{ default_center|safe }};
+    const statusEl = document.getElementById('statusText');
+    const errorEl = document.getElementById('errorState');
+    const emptyEl = document.getElementById('emptyState');
+    const tbody = document.getElementById('resultsBody');
+    const rowTpl = document.getElementById('rowTpl');
+
+    const map = L.map('map').setView([defaultCenter.lat, defaultCenter.lng], 13);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let userMarker = null;
+    const pharmacyMarkers = [];
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+    function showError(text) {
+      errorEl.textContent = text;
+      errorEl.classList.remove('d-none');
+    }
+    function clearError() {
+      errorEl.classList.add('d-none');
+      errorEl.textContent = '';
+    }
+    function clearResults() {
+      tbody.innerHTML = '';
+      emptyEl.classList.add('d-none');
+      pharmacyMarkers.forEach(m => map.removeLayer(m));
+      pharmacyMarkers.length = 0;
+    }
+
+    function badgeFor(status) {
+      const s = (status || '').toUpperCase();
+      if (s === 'AVAILABLE') return { cls: 'bg-success', label: 'AVAILABLE' };
+      if (s === 'LOW STOCK') return { cls: 'bg-warning text-dark', label: 'LOW STOCK' };
+      if (s === 'OUT OF STOCK') return { cls: 'bg-danger', label: 'OUT OF STOCK' };
+      if (s === 'STALE DATA') return { cls: 'bg-secondary', label: 'STALE' };
+      return { cls: 'bg-secondary', label: 'UNKNOWN' };
+    }
+
+    async function fetchNearby(lat, lng) {
+      const radius = document.getElementById('radius').value;
+      const url = `/api/v1/pharmacies/nearby/?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radius_km=${encodeURIComponent(radius)}&medicine_id=${encodeURIComponent(medicineId)}`;
+      setStatus('Loading…');
+      clearError();
+      clearResults();
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' }});
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error((data && (data.detail || JSON.stringify(data))) || 'Failed to fetch nearby pharmacies');
+      }
+      return data.results || [];
+    }
+
+    function render(lat, lng, pharmacies) {
+      // user marker
+      if (userMarker) map.removeLayer(userMarker);
+      userMarker = L.marker([lat, lng]).addTo(map).bindPopup('You are here');
+
+      if (!pharmacies.length) {
+        emptyEl.classList.remove('d-none');
+        setStatus('0 results');
+        map.setView([lat, lng], 13);
+        return;
+      }
+
+      pharmacies.forEach(p => {
+        const m = L.marker([p.latitude, p.longitude]).addTo(map);
+        m.bindPopup(`<strong>${p.name}</strong><br/>${p.address}<br/>${p.distance_km} km`);
+        pharmacyMarkers.push(m);
+
+        const row = rowTpl.content.cloneNode(true);
+        row.querySelector('.name').textContent = p.name;
+        row.querySelector('.address').textContent = p.address;
+        if (p.is_demo_data) row.querySelector('.demo').classList.remove('d-none');
+        row.querySelector('.distance').textContent = `${p.distance_km} km`;
+
+        const availability = p.availability || {};
+        const badge = badgeFor(availability.availability_status);
+        const badgeEl = row.querySelector('.status');
+        badgeEl.className = `badge ${badge.cls}`;
+        badgeEl.textContent = badge.label;
+
+        row.querySelector('.stock').textContent = (availability.stock === null || availability.stock === undefined) ? '—' : availability.stock;
+        row.querySelector('.conf').textContent = availability.confidence_score ? `${availability.confidence_score}%` : '—';
+        row.querySelector('.view').href = `/pharmacies/view/${p.id}/`;
+
+        tbody.appendChild(row);
+      });
+
+      setStatus(`${pharmacies.length} result(s)`);
+      const bounds = L.latLngBounds([[lat, lng], ...pharmacies.map(p => [p.latitude, p.longitude])]);
+      map.fitBounds(bounds.pad(0.2));
+    }
+
+    async function refreshWithLocation(lat, lng) {
+      try {
+        const pharmacies = await fetchNearby(lat, lng);
+        render(lat, lng, pharmacies);
+      } catch (e) {
+        showError(e.message || String(e));
+        setStatus('Error');
+      }
+    }
+
+    function requestLocationAndLoad() {
+      setStatus('Requesting location…');
+      if (!navigator.geolocation) {
+        showError('Geolocation is not supported by this browser. Using default location.');
+        refreshWithLocation(defaultCenter.lat, defaultCenter.lng);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          refreshWithLocation(pos.coords.latitude, pos.coords.longitude);
+        },
+        () => {
+          showError('Location permission denied. Using default location (Pune).');
+          refreshWithLocation(defaultCenter.lat, defaultCenter.lng);
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    document.getElementById('btnRefresh').addEventListener('click', requestLocationAndLoad);
+    document.getElementById('radius').addEventListener('change', requestLocationAndLoad);
+
+    requestLocationAndLoad();
+  </script>
+{% endblock %}
+

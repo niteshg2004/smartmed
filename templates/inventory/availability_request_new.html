@@ -1,0 +1,66 @@
+{% extends "base/base.html" %}
+{% block title %}New Availability Request — SmartMed{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">Request medicine availability</h2>
+        <p class="text-muted mb-0">Select a medicine and a pharmacy, then send a request.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'inventory:requests-my' %}">
+        <i class="bi bi-arrow-left me-1"></i> Back
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <form method="post" class="vstack gap-3">
+                    {% csrf_token %}
+                    <div>
+                        <label class="form-label">Medicine</label>
+                        <select name="medicine_id" class="form-select" required>
+                            <option value="">Select a medicine</option>
+                            {% for m in medicines %}
+                            <option value="{{ m.id }}" {% if prefill_medicine_id == m.id %}selected{% endif %}>
+                                {{ m.brand_name }} {{ m.strength }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Pharmacy</label>
+                        <select name="pharmacy_id" class="form-select" required>
+                            <option value="">Select a pharmacy</option>
+                            {% for p in pharmacies %}
+                            <option value="{{ p.id }}" {% if prefill_pharmacy_id == p.id %}selected{% endif %}>
+                                {{ p.name }} — {{ p.address }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Only verified pharmacies are listed.</div>
+                    </div>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-send me-1"></i> Send request
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">What happens next</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item px-0">The pharmacy reviews your request and replies with availability.</li>
+                    <li class="list-group-item px-0">Availability may be <strong>Available</strong>, <strong>Low Stock</strong>, or <strong>Out of Stock</strong>.</li>
+                    <li class="list-group-item px-0">Responses are visible under “My availability requests”.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

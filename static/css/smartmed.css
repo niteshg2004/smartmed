@@ -1,0 +1,30 @@
+/* SmartMed base styles. Extended in Phase 8 (UI polish). */
+body {
+    background-color: #f7f9fb;
+}
+.navbar-brand {
+    letter-spacing: 0.5px;
+}
+.card {
+    border: 1px solid #e5e9ef;
+}
+
+/* Phase 3 UI Polish */
+.search-hero {
+    background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    border-color: #e5e9ef !important;
+}
+.medicine-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.medicine-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.1) !important;
+}
+.confidence-badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+.category-tag {
+    font-weight: 500;
+}

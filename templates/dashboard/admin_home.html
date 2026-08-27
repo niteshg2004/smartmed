@@ -1,0 +1,102 @@
+{% extends "base/base.html" %}
+{% block title %}Admin Dashboard — SmartMed{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h3 class="mb-1">Welcome, {{ user.name }}</h3>
+        <p class="text-muted mb-0">Review alternative candidates, monitor requests, and manage system data.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="{% url 'medicines:search' %}">
+            <i class="bi bi-capsule me-1"></i> Medicines
+        </a>
+        <a class="btn btn-outline-secondary" href="{% url 'pharmacies:list' %}">
+            <i class="bi bi-shop me-1"></i> Pharmacies
+        </a>
+        <a class="btn btn-outline-secondary" href="/admin/">
+            <i class="bi bi-gear me-1"></i> Django admin
+        </a>
+        <a class="btn btn-primary" href="{% url 'alternatives:verification-queue' %}">
+            <i class="bi bi-check2-square me-1"></i> Verify alternatives
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <a href="{% url 'alternatives:verification-queue' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Pending alternative verification</div>
+                <div class="small text-muted">Approve or reject candidate matches</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'predictions:analytics' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Stock analytics</div>
+                <div class="small text-muted">High stock-out risk insights</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-4">
+        <a href="{% url 'inventory:requests-inbox' %}" class="text-decoration-none text-dark">
+            <div class="card p-3 shadow-sm border-0 h-100">
+                <div class="fw-semibold">Availability requests</div>
+                <div class="small text-muted">View/respond across pharmacies</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Pending alternative candidates</h5>
+            </div>
+            <div class="card-body">
+                {% if pending_alternatives %}
+                    <ul class="list-group list-group-flush">
+                        {% for a in pending_alternatives %}
+                            <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <div class="small">
+                                    {{ a.medicine.brand_name }} → {{ a.candidate_medicine.brand_name }}
+                                    <span class="text-muted">({{ a.confidence_score|floatformat:2|cut:"0." }}%)</span>
+                                </div>
+                                <a class="btn btn-sm btn-outline-primary" href="{% url 'alternatives:verification-queue' %}">Review</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-muted">No pending candidates.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Recent availability requests</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_availability_requests %}
+                    <ul class="list-group list-group-flush">
+                        {% for r in recent_availability_requests %}
+                            <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                                <div class="small">
+                                    {{ r.user.name }} • {{ r.medicine.brand_name }} • {{ r.pharmacy.name }}
+                                    <span class="text-muted">({{ r.status }})</span>
+                                </div>
+                                <a class="btn btn-sm btn-outline-secondary" href="{% url 'inventory:requests-inbox' %}">Open</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-muted">No requests yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

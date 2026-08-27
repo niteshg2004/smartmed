@@ -1,0 +1,38 @@
+{
+  "trained_at": "2026-08-23T11:21:46.084194Z",
+  "best_model": "random_forest",
+  "feature_columns": [
+    "current_stock",
+    "stock_change_1d",
+    "demand_1d",
+    "demand_avg_3d",
+    "demand_avg_7d",
+    "demand_max_7d",
+    "demand_volatility_7d",
+    "demand_trend_7d",
+    "restock_1d",
+    "days_since_restock",
+    "day_of_week",
+    "is_weekend",
+    "pharmacy_id",
+    "medicine_id"
+  ],
+  "training_samples": 34784,
+  "test_samples": 14448,
+  "total_samples": 49232,
+  "history_start": "2026-04-25",
+  "history_end": "2026-08-21",
+  "metrics": {
+    "linear_regression": {
+      "mae": 2.567389861289567,
+      "rmse": 3.365386601125174,
+      "r2": 0.40530838418884385
+    },
+    "random_forest": {
+      "mae": 2.264547742740099,
+      "rmse": 2.9622853208137334,
+      "r2": 0.5392390489136376
+    }
+  },
+  "notes": "Model predicts next-day inferred demand from InventoryHistory-derived daily stock series. This is decision-support only; predictions may be inaccurate."
+}

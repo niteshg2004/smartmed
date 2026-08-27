@@ -1,0 +1,38 @@
+{% extends 'base/base.html' %}
+{% block title %}Inventory Management{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Inventory for {{ pharmacy.name }}</h2>
+    <a href="{% url 'inventory:add' %}" class="btn btn-primary mb-3">Add Medicine</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Medicine</th>
+                <th>Quantity</th>
+                <th>Status</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in inventory %}
+            <tr>
+                <td>{{ item.medicine.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>
+                    {% if item.availability_status == 'in_stock' %}
+                    <span class="badge bg-success">In Stock</span>
+                    {% elif item.availability_status == 'low_stock' %}
+                    <span class="badge bg-warning">Low Stock</span>
+                    {% else %}
+                    <span class="badge bg-danger">Out of Stock</span>
+                    {% endif %}
+                </td>
+                <td>{% if item.price %}{{ item.price }}{% else %}N/A{% endif %}</td>
+                <td><a href="{% url 'inventory:update' item.medicine.id %}" class="btn btn-sm btn-info">Update</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

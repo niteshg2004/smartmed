@@ -1,0 +1,59 @@
+{% extends "base/base.html" %}
+{% block title %}Prescriptions — SmartMed{% endblock %}
+{% block content %}
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">Prescriptions</h2>
+        <p class="text-muted mb-0">Uploaded prescription images and OCR results (confirmation required).</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'prescriptions:upload' %}">
+        <i class="bi bi-plus-lg me-1"></i> Upload new
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        {% if prescriptions %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Uploaded</th>
+                        <th>Status</th>
+                        <th class="text-end">Open</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in prescriptions %}
+                    <tr>
+                        <td class="fw-semibold">#{{ p.id }}</td>
+                        <td>{{ p.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            {% if p.processing_status == "processed" %}
+                                <span class="badge bg-success">Processed</span>
+                            {% elif p.processing_status == "failed" %}
+                                <span class="badge bg-danger">Failed</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary" href="{% url 'prescriptions:detail' pk=p.pk %}">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+            No prescriptions uploaded yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

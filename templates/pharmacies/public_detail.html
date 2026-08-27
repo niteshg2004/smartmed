@@ -1,0 +1,70 @@
+{% extends "base/base.html" %}
+{% block title %}{{ pharmacy.name }} — SmartMed{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+    <div>
+      <h2 class="mb-1">{{ pharmacy.name }}</h2>
+      <div class="text-muted">{{ pharmacy.address }}</div>
+      <div class="text-muted small">{{ pharmacy.phone }}</div>
+    </div>
+    <div class="text-end">
+      {% if pharmacy.is_demo_data %}
+        <span class="badge bg-warning text-dark">DEMO / SIMULATED DATA</span>
+      {% endif %}
+      <div class="small text-muted mt-2">
+        Verification: <span class="fw-semibold">{{ pharmacy.get_verification_status_display }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    Inventory shown below is demo/simulated when flagged and may not reflect live stock.
+    Always confirm by calling the pharmacy.
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 pb-0">
+      <h5 class="mb-0">Inventory</h5>
+    </div>
+    <div class="card-body">
+      {% if inventory %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="small text-muted">
+              <tr>
+                <th>Medicine</th>
+                <th class="text-end">Stock</th>
+                <th class="text-end">Last updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in inventory %}
+                <tr>
+                  <td>
+                    <div class="fw-semibold">{{ item.medicine.brand_name }} {{ item.medicine.strength }}</div>
+                    <div class="small text-muted">{{ item.medicine.generic_name }} • {{ item.medicine.composition }}</div>
+                  </td>
+                  <td class="text-end">
+                    {% if item.quantity <= 0 %}
+                      <span class="badge bg-danger">OUT</span>
+                    {% elif item.quantity <= 5 %}
+                      <span class="badge bg-warning text-dark">LOW</span>
+                    {% else %}
+                      <span class="badge bg-success">OK</span>
+                    {% endif %}
+                    <span class="ms-2">{{ item.quantity }}</span>
+                  </td>
+                  <td class="text-end small text-muted">{{ item.last_updated|date:"Y-m-d H:i" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-muted">No inventory data available.</div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
